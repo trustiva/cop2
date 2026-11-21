@@ -303,40 +303,47 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-100">
-      {/* Top Navigation Bar */}
-      <header className="h-[4.5rem] border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 flex items-center justify-between shrink-0 shadow-2xs">
-        <div className="flex items-center gap-3.5">
-          <div className="flex flex-col">
-            <h1 className="text-lg font-bold tracking-tight text-gray-900 dark:text-zinc-100">
-              Document Copilot
-            </h1>
-            <span className="text-[11px] text-gray-500 dark:text-zinc-400 font-medium">
-              Driftwood Capital · Gemini Glass-Box RAG
+    <div className="flex flex-col h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+      {/* Slim Minimal Top Bar */}
+      <header className="h-14 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md px-5 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveThread(null)
+              setMessages([])
+            }}
+            className="flex items-center gap-2 text-left group cursor-pointer"
+          >
+            <span className="w-6 h-6 rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 flex items-center justify-center text-xs font-bold tracking-tighter">
+              DC
             </span>
-          </div>
+            <span className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+              Document Copilot
+            </span>
+          </button>
+
           {health && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-2xs">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-500 dark:text-zinc-400 pl-2 border-l border-zinc-200 dark:border-zinc-800">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               <span>
-                SEC Corpus Online
                 {corpusStats
-                  ? ` · ${corpusStats.source_documents} docs · ${corpusStats.document_chunks} chunks`
-                  : ''}
+                  ? `${corpusStats.source_documents} docs · ${corpusStats.document_chunks} chunks`
+                  : 'Corpus online'}
               </span>
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setCommandOpen(true)}
-            className="hidden sm:inline-flex items-center gap-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-950 px-3 py-1.5 text-xs text-gray-500 dark:text-zinc-400 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors cursor-pointer"
-            title="Open Command Palette (Cmd+K / Ctrl+K)"
+            className="hidden sm:inline-flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/70 px-2.5 py-1.5 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors cursor-pointer"
+            title="Command Palette (Cmd+K / Ctrl+K)"
           >
-            <span>Quick commands...</span>
-            <kbd className="rounded bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 px-1.5 py-0.5 text-[10px] font-mono">
+            <span>Search</span>
+            <kbd className="rounded bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1 py-0.5 text-[10px] font-mono leading-none">
               ⌘K
             </kbd>
           </button>
@@ -344,25 +351,40 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => setDarkMode((d) => !d)}
-            className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-            title="Toggle Dark / Light Mode"
+            className="rounded-lg p-1.5 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+            title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label="Toggle theme"
           >
-            {darkMode ? '☀ Light' : '☾ Dark'}
+            {darkMode ? (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.75}
+                  d="M12 3v1m0 16v1m8.66-9h-1M4.34 12h-1m15.07-6.07l-.71.71M6.34 17.66l-.71.71m12.73 0l-.71-.71M6.34 6.34l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.75}
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                />
+              </svg>
+            )}
           </button>
 
           {user && (
-            <div className="hidden md:block text-right ml-1">
-              <p className="text-xs font-semibold text-gray-900 dark:text-zinc-100">
-                {user.email}
-              </p>
-              <p className="text-[11px] text-gray-400 dark:text-zinc-500">
-                Equity Research Analyst
-              </p>
-            </div>
+            <span className="hidden md:inline-block text-xs text-zinc-500 dark:text-zinc-400 pl-2 border-l border-zinc-200 dark:border-zinc-800 max-w-[180px] truncate">
+              {user.email}
+            </span>
           )}
+
           <button
             onClick={handleSignOut}
-            className="rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors shadow-2xs cursor-pointer"
+            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
           >
             Sign out
           </button>
@@ -392,7 +414,6 @@ export default function HomePage() {
           onSelectCompanyPrompt={(prompt, ticker) => handleNewThread(prompt, ticker)}
           onInspectPassage={(passage, quote) => setActivePassage({ passage, quote })}
           onExportBrief={handleExportBrief}
-          onOpenUpload={() => setUploadOpen(true)}
         />
       </div>
 
@@ -426,11 +447,12 @@ export default function HomePage() {
       />
 
       {error && (
-        <div className="fixed bottom-4 right-4 bg-red-600 text-white text-xs px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 z-50">
+        <div className="fixed bottom-4 right-4 bg-zinc-900 dark:bg-zinc-800 border border-red-500/40 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-3 z-50">
+          <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
           <span className="font-medium">{error}</span>
           <button
             onClick={() => setError(null)}
-            className="ml-2 font-bold hover:opacity-80 p-1 cursor-pointer"
+            className="ml-1 text-zinc-400 hover:text-white p-0.5 cursor-pointer"
             title="Dismiss error"
           >
             ✕

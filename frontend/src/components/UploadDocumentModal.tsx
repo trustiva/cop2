@@ -62,31 +62,35 @@ export default function UploadDocumentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-zinc-800 px-6 py-4">
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-2xl overflow-hidden">
+        <div className="flex items-start justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 px-5 py-4">
           <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-zinc-100">
-              Index Document with Gemini Embeddings
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              Index Document
             </h3>
-            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
-              Drop a `.md`, `.txt`, or `.html` filing/memo to chunk & embed with `gemini-embedding-2`.
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+              Chunk & embed HTML, Markdown, or text via{' '}
+              <span className="font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+                gemini-embedding-2
+              </span>
+              .
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-700 dark:hover:text-zinc-200 cursor-pointer"
+            className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors cursor-pointer"
           >
             ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">
+              <label className="block text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
                 Ticker / Tag
               </label>
               <input
@@ -94,22 +98,22 @@ export default function UploadDocumentModal({
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value.toUpperCase())}
                 placeholder="AAPL, NVDA, CUSTOM"
-                className="w-full rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900 px-3 py-2 text-xs font-mono text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">
+              <label className="block text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
                 Document Type
               </label>
               <select
                 value={form}
                 onChange={(e) => setForm(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900 px-3 py-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600"
               >
                 <option value="10-K">10-K Filing</option>
                 <option value="10-Q">10-Q Filing</option>
-                <option value="EARNINGS">Earnings Call / Release</option>
-                <option value="NOTE">Research Memo / Note</option>
+                <option value="EARNINGS">Earnings Release</option>
+                <option value="NOTE">Research Memo</option>
               </select>
             </div>
           </div>
@@ -127,10 +131,10 @@ export default function UploadDocumentModal({
               if (dropped) handleFile(dropped)
             }}
             onClick={() => fileInputRef.current?.click()}
-            className={`rounded-xl border-2 border-dashed p-5 text-center transition-colors cursor-pointer ${
+            className={`rounded-xl border border-dashed p-6 text-center transition-colors cursor-pointer ${
               dragActive
-                ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30'
-                : 'border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500 bg-gray-50/50 dark:bg-zinc-950/50'
+                ? 'border-zinc-900 dark:border-zinc-200 bg-zinc-100/70 dark:bg-zinc-900'
+                : 'border-zinc-300 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 bg-zinc-50/50 dark:bg-zinc-900/40'
             }`}
           >
             <input
@@ -143,53 +147,66 @@ export default function UploadDocumentModal({
                 if (file) handleFile(file)
               }}
             />
-            <p className="text-sm font-medium text-gray-800 dark:text-zinc-200">
-              {filename ? `Loaded: ${filename}` : 'Drop a filing or click to browse'}
+            <svg
+              className="w-5 h-5 mx-auto mb-2 text-zinc-400 dark:text-zinc-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+              />
+            </svg>
+            <p className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
+              {filename ? filename : 'Drop a file here or click to browse'}
             </p>
-            <p className="text-xs text-gray-400 mt-1">
-              Supports HTML SEC filings, Markdown, or plain text
+            <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1">
+              HTML, Markdown, or plain text
             </p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">
-              Or Paste Document Text
+            <label className="block text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+              Or paste text directly
             </label>
             <textarea
-              rows={4}
+              rows={3}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Paste earnings highlights, 10-K excerpts, or research notes..."
-              className="w-full rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-xs font-mono text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="Paste earnings excerpts or research notes..."
+              className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900 px-3 py-2 text-xs font-mono text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600"
             />
           </div>
 
           {error && (
-            <div className="rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+            <div className="rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 px-3 py-2 text-xs text-red-700 dark:text-red-300">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-3 py-2 text-xs text-emerald-800 dark:text-emerald-300">
-              Indexed <strong>{success.chunks_created} chunks</strong> for {success.ticker} ({success.form}). Corpus now has {success.total_documents} docs & {success.total_chunks} chunks.
+            <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 px-3 py-2 text-xs text-emerald-800 dark:text-emerald-300">
+              Indexed <strong>{success.chunks_created} chunks</strong> for {success.ticker} ({success.form}).
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-2 pt-2">
+          <div className="flex items-center justify-end gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-gray-300 dark:border-zinc-700 px-4 py-2 text-xs font-medium text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer"
+              className="rounded-lg px-3.5 py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
             >
-              Close
+              Cancel
             </button>
             <button
               type="submit"
               disabled={uploading || !content.trim()}
-              className="rounded-lg bg-black dark:bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800 dark:hover:bg-emerald-500 disabled:opacity-50 cursor-pointer"
+              className="rounded-lg bg-zinc-900 dark:bg-zinc-100 px-4 py-2 text-xs font-semibold text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-white disabled:opacity-40 transition-colors cursor-pointer"
             >
-              {uploading ? 'Chunking & Embedding...' : 'Index into Corpus'}
+              {uploading ? 'Indexing...' : 'Index Document'}
             </button>
           </div>
         </form>
