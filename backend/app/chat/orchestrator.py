@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 import uuid
 from collections.abc import AsyncGenerator
 
@@ -20,6 +21,7 @@ from app.assistant.outputs import Citation, GroundedAnswer
 from app.auth.dependencies import CurrentUser
 from app.chat.messages import ChatMessageIn
 from app.chat.streaming import format_sse
+from app.config import settings
 from app.database.chats import (
     create_assistant_message_with_citations,
     create_thread_message,
@@ -50,16 +52,10 @@ async def stream_chat_turn(
     messages: list[ChatMessageIn],
     user: CurrentUser,
     db: Session,
+    ticker: str | None = None,
 ) -> AsyncGenerator[str, None]:
-    """Orchestrate a complete chat turn end-to-end:
-
-    1. Validate thread ownership
-    2. Persist user message & update title
-    3. Run PydanticAI agent with hybrid retriever tools and conversation history
-    4. Enforce grounding and citation validation
-    5. Stream tokens and citation metadata via SSE
-    6. Persist assistant message and citations to database
-    """
+    """Orchestrate a complete chat turn end-to-end with live Glass-Box agent status trace."""
+    t_start = time.perf_counter()
     thread = get_user_thread(db, thread_id=thread_id, user_id=user.id)
     if not thread:
         yield format_sse({"error": f"Thread {thread_id} not found or unauthorized"}, event="error")
@@ -76,6 +72,7 @@ async def stream_chat_turn(
         return
 
     prior_history = _build_message_history(messages[:last_user_idx])
+    scoped_ticker = ticker.strip().upper() if ticker and ticker.strip() else None
 
     try:
         # Persist the incoming user message
@@ -95,18 +92,43 @@ async def stream_chat_turn(
             grounding_validator=GroundingValidator(),
         )
 
+        # Emit live Glass-Box status step 1
+        scope_label = f" for {scoped_ticker}" if scoped_ticker else ""
+        yield format_sse(
+            {
+                "step": "retrieve",
+                "label": f"Searching indexed filings{scope_label} (hybrid vector + full-text RRF)...",
+            },
+            event="status",
+        )
+
+        prompt_text = (
+            f"[Focus Ticker: {scoped_ticker}] {user_msg.content}"
+            if scoped_ticker
+            else user_msg.content
+        )
+
         logger.info(
             "Invoking Document Copilot Agent",
             thread_id=str(thread_id),
             user_id=user.id,
+            ticker=scoped_ticker,
             history_turns=len(prior_history),
             prompt=user_msg.content[:80],
+        )
+
+        yield format_sse(
+            {
+                "step": "synthesize",
+                "label": f"Reasoning & grounding with {settings.llm_model}...",
+            },
+            event="status",
         )
 
         # Run PydanticAI agent with graceful fallback if Gemini quota / model execution fails
         try:
             result = await document_agent.run(
-                user_msg.content,
+                prompt_text,
                 deps=deps,
                 message_history=prior_history or None,
             )
@@ -116,7 +138,7 @@ async def stream_chat_turn(
                 "Document agent run failed; generating grounded synthesis directly from retrieved passages.",
                 error=str(exc),
             )
-            passages = deps.retriever.search(user_msg.content, limit=5)
+            passages = deps.retriever.search(user_msg.content, ticker=scoped_ticker, limit=5)
             deps.retrieved_passages.extend(passages)
             if passages:
                 top_p = passages[0]
@@ -136,6 +158,14 @@ async def stream_chat_turn(
                     has_sufficient_evidence=False,
                 )
 
+        yield format_sse(
+            {
+                "step": "verify",
+                "label": f"Verifying citations across {len(deps.retrieved_passages)} retrieved passages...",
+            },
+            event="status",
+        )
+
         # Enforce grounding trust contract
         validated_answer: GroundedAnswer = deps.grounding_validator.enforce_or_fallback(
             raw_answer,
@@ -147,7 +177,7 @@ async def stream_chat_turn(
         for i, word in enumerate(words):
             token = word + (" " if i < len(words) - 1 else "")
             yield format_sse({"delta": token}, event="text")
-            await asyncio.sleep(0.015)
+            await asyncio.sleep(0.012)
 
         # Format and stream citations and verified source passages
         citations_data = [
@@ -176,12 +206,17 @@ async def stream_chat_turn(
             citations=citations_data,
         )
 
-        # Emit completion event
+        elapsed_ms = int((time.perf_counter() - t_start) * 1000)
+
+        # Emit completion event with model & latency telemetry
         yield format_sse(
             {
                 "message_id": str(assistant_msg.id),
                 "thread_id": str(thread.id),
                 "finishReason": "stop",
+                "elapsed_ms": elapsed_ms,
+                "model": settings.llm_model,
+                "passages_scanned": len(deps.retrieved_passages),
             },
             event="done",
         )

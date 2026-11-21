@@ -35,6 +35,11 @@ export type Citation = {
   passage?: SourcePassage
 }
 
+export type AgentTraceStep = {
+  step: string
+  label: string
+}
+
 export type Message = {
   id: string
   thread_id: string
@@ -44,12 +49,48 @@ export type Message = {
   citations: Citation[]
   cited_passages?: SourcePassage[]
   isStreaming?: boolean
+  traceSteps?: AgentTraceStep[]
+  model?: string
+  elapsedMs?: number
+  passagesScanned?: number
+}
+
+export type CorpusStats = {
+  source_documents: number
+  document_chunks: number
+  tickers: string[]
+}
+
+export type UploadDocumentPayload = {
+  filename: string
+  content: string
+  ticker: string
+  form: string
+  filing_date?: string
+  source_url?: string
+}
+
+export type UploadDocumentResponse = {
+  document_id: string
+  ticker: string
+  form: string
+  filename: string
+  chunks_created: number
+  total_documents: number
+  total_chunks: number
 }
 
 export type StreamHandlers = {
+  onStatus?: (step: AgentTraceStep) => void
   onTextDelta: (delta: string) => void
   onCitations: (citations: Citation[], passages: SourcePassage[]) => void
-  onDone: (data: { message_id: string; thread_id: string }) => void
+  onDone: (data: {
+    message_id: string
+    thread_id: string
+    elapsed_ms?: number
+    model?: string
+    passages_scanned?: number
+  }) => void
   onError: (error: string) => void
 }
 
@@ -57,6 +98,7 @@ export async function streamChat(
   threadId: string,
   messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
   handlers: StreamHandlers,
+  ticker?: string | null,
 ): Promise<void> {
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
@@ -67,11 +109,17 @@ export async function streamChat(
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ threadId, messages }),
+    body: JSON.stringify({
+      threadId,
+      messages,
+      ...(ticker ? { ticker } : {}),
+    }),
   })
 
   if (!response.ok || !response.body) {
-    throw new Error(`Chat stream request failed: ${response.statusText}`)
+    throw new Error(
+      `Chat stream request failed (${response.status}${response.statusText ? `: ${response.statusText}` : ''})`,
+    )
   }
 
   const reader = response.body.getReader()
@@ -99,7 +147,9 @@ export async function streamChat(
         const rawData = trimmed.slice('data:'.length).trim()
         try {
           const parsed = JSON.parse(rawData)
-          if (currentEvent === 'text' && parsed.delta) {
+          if (currentEvent === 'status' && parsed.label) {
+            handlers.onStatus?.({ step: parsed.step || 'status', label: parsed.label })
+          } else if (currentEvent === 'text' && parsed.delta) {
             handlers.onTextDelta(parsed.delta)
           } else if (currentEvent === 'citations') {
             handlers.onCitations(parsed.citations || [], parsed.cited_passages || [])
@@ -120,6 +170,12 @@ export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
   delete: <T>(path: string) => request<T>('DELETE', path),
+
+  documents: {
+    stats: () => request<CorpusStats>('GET', '/documents/stats'),
+    upload: (payload: UploadDocumentPayload) =>
+      request<UploadDocumentResponse>('POST', '/documents/upload', payload),
+  },
 
   threads: {
     list: () => request<Thread[]>('GET', '/threads'),

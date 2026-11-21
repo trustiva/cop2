@@ -33,7 +33,19 @@ export async function request<T>(
   })
 
   if (!response.ok) {
-    throw new ApiError(response.status, response.statusText)
+    let detail = response.statusText
+    try {
+      const errBody = (await response.json()) as { detail?: string }
+      if (typeof errBody?.detail === 'string' && errBody.detail) {
+        detail = errBody.detail
+      }
+    } catch {
+      // Non-JSON error body
+    }
+    throw new ApiError(
+      response.status,
+      detail ? `${response.status}: ${detail}` : `HTTP ${response.status} error`,
+    )
   }
 
   if (response.status === 204) {

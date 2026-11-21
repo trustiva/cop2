@@ -21,13 +21,14 @@ async def chat_stream(
     current_user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> StreamingResponse:
-    """Stream grounded assistant answers and citations via Server-Sent Events (SSE)."""
+    """Stream grounded assistant answers, agent status trace, and citations via SSE."""
     return StreamingResponse(
         stream_chat_turn(
             thread_id=payload.threadId,
             messages=payload.messages,
             user=current_user,
             db=db,
+            ticker=payload.ticker,
         ),
         media_type="text/event-stream",
         headers={

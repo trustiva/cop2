@@ -18,3 +18,4 @@ class ChatStreamRequest(BaseModel):
 
     threadId: uuid.UUID
     messages: list[ChatMessageIn]
+    ticker: str | None = None
